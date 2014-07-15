@@ -1,0 +1,211 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Estudio de drag&drop</title>
+<style>
+	*{margin:0;padding:0;}
+	aside, section{display:inline-block; vertical-align:top; margin:40px 0 0 20px;}
+	aside{
+		min-height: 350px;
+		width: 350px;
+		padding:20px; 
+	}
+	.box{
+		margin-bottom:20px;
+		width:200px; height:100px;
+		float:left;
+	}
+	aside div p{min-width:250px;text-align:center; padding:30px; }
+	section{width:600px; margin-left:50px;}
+	section div.contenedor{
+		border:1px solid grey;
+		height:120px; width:500px;
+		margin-bottom:20px;
+		background-color:#F7F7F7;
+	}
+	section div.contenedor img{ -webkit-user-select:none;}
+	
+	button{display: block;
+	padding: 5px 20px;
+	background-color: rgb(218, 218, 218);
+	border-radius: 10px;
+	margin-left: 50px;
+	}
+	div#papelera{
+	background: url('papelera.jpg') no-repeat;
+	background-size: contain;
+	height: 80px; width:100px;
+	float:right;
+	margin:150px 30px;
+}
+	p#info{
+	width: 70%;
+	margin: 10px auto;
+	padding: 10px;
+	border: 1px solid #ccc;
+	background-color: rgb(250, 250, 250);
+	}
+</style>
+<script>
+n=1; // contador global
+
+// ELEMENTO DRAGGABLE=TRUE
+// QUÉ ARRASTRAMOS - ondragstart
+function dragstart(ev){
+	// ev.dataTransfer.effectAllowed = 'move'; // Define el efecto como mover  (por defecto si no se pone esta linea)
+	ev.dataTransfer.setData("Text", ev.target.id);
+//	ev.dataTransfer.setDragImage(ev.target, 0, 0); 
+	// Define la imagen que se vera al ser arrastrado el elemento y por donde se coje el elemento que se va a mover (el raton aparece en la esquina sup_izq con 0,0)
+
+	
+	// modificamos el borde de los destinos disponibles
+	var title = ev.target.title;
+	
+	document.getElementById('morning').style.outline='3px solid green';
+	document.getElementById('afternoon').style.outline='3px solid green';	
+	if (title == 'profesor1'|| title == 'profesor2'){
+	document.getElementById('night').style.outline='3px solid green';
+	}else{document.getElementById('night').style.outline='3px solid red';}
+}
+
+
+// acción que ocurre cdo dejamos de arrastrar el elemento (restituimos el outline de los destinos) ondragend
+function dragend(ev){
+	document.getElementById('morning').style.outline='';
+	document.getElementById('afternoon').style.outline='';
+	document.getElementById('night').style.outline='';
+	
+	// ev.dataTransfer.clearData("Text");
+}
+
+
+// ELEMENTO DESTINO
+// QUE PASA CUANDO ENTRAMOS EN ÉL y CDO SALIMOS
+function enter(ev) {
+	ev.target.style.border = '2px solid blue'; 
+}
+
+function leave(ev) {
+	ev.target.style.border = ''; 
+}
+
+// OBJETO SOBRE EL QUE PODEMOS DEJAR CAER EL OBJETO - ondragover
+function over(ev){
+	
+	var iddrag = ev.dataTransfer.getData("Text"); 	//id del obj arrastrado
+    var id = ev.target.getAttribute('id');			//id de la caja destino
+	var total = document.getElementById(id).childNodes.length;
+	
+	if( iddrag.slice(0,9) == 'profesor3' && id == 'night'){return false;}
+	// El profesor 3 no puede hacer el turno de noche o el turno ya tiene 2 profesores
+	else if( total > 1) {return false;}
+	// El mismo profesor no en mismo turno 
+	else if ( total>0 && iddrag.slice(0,9) == document.getElementById(id).childNodes[0].id.slice(0,9)){return false;}
+	else{	
+		ev.preventDefault();}
+
+}
+
+// QUÉ PASA CDO LO DEJAMOS CAER - ondrop
+function drop(ev){
+	var iddrag = ev.dataTransfer.getData("Text"); 
+
+	// se duplican estas condiciones porque Chrome solo permite leer dataTransfer.getData en este evento 
+	var id = ev.target.getAttribute('id');
+	var total = document.getElementById(id).childNodes.length; 
+	if( iddrag.slice(0,9) == 'profesor3' && id == 'night'){return false;}
+	else if( total > 1) {return false;}
+	else if ( total > 0 && iddrag.slice(0,9) == document.getElementById(id).childNodes[0].id.slice(0,9)){return false;}
+	// fin duplicado
+	
+	else{	
+		
+		  if ( iddrag == 'profesor1' || iddrag == 'profesor2' || iddrag == 'profesor3' ){ //copiar
+		  ev.preventDefault(); //impide que firefox abra el png como imagen
+		  var elementoArrastrado = document.getElementById(ev.dataTransfer.getData("Text")); // Elemento arrastrado
+		  var elementoClonado = elementoArrastrado.cloneNode(true); // Se clona el elemento
+		  elementoClonado.id=iddrag+"-clon"+n; n++;
+		  ev.target.appendChild(elementoClonado); // Se añade el elemento clonado
+		  }
+		  else {	// mover
+		  ev.preventDefault();
+		  var data = ev.dataTransfer.getData("Text");
+		  ev.target.appendChild(document.getElementById(data));
+		  }
+	}
+}
+
+
+function eliminar(ev, e){
+	var elementoArrastrado = document.getElementById(ev.dataTransfer.getData("Text")); // Elemento arrastrado
+	elementoArrastrado.parentNode.removeChild(elementoArrastrado); // Elimina el elemento
+	e.style.border="";
+}
+
+// ENVIO DE DATOS CON UN BOTON
+function resultados(){
+	var turno1=""; var turno2=""; var turno3=""; var str="";
+	var morning=document.getElementById('morning');
+	var afternoon=document.getElementById('afternoon');	
+	var night=document.getElementById('night');	
+	
+
+	if ( morning.childNodes.length == 0 || afternoon.childNodes.length == 0  ||  night.childNodes.length == 0 ){
+		
+		str="No ha completado el horario";	
+		
+	}else { 
+			for (i=0;i < morning.childNodes.length;i++){
+			var id1=morning.childNodes[i].getAttribute('title');
+			turno1+= id1 + ", "; 
+			}
+			for (i=0;i < afternoon.childNodes.length;i++){
+			var id2=afternoon.childNodes[i].getAttribute('title');
+			turno2+= id2 + ", "; 
+			}
+			for (i=0;i < night.childNodes.length;i++){
+			var id3=night.childNodes[i].getAttribute('title');
+			turno3+= id3 + ", "; 
+			}	
+	str+="Turno de mañana: "+turno1+"\n"+"Turno de tarde: "+turno2+"\n"+"Turno de noche: "+turno3+"\n";
+	
+	}
+
+	alert(str);
+
+
+}
+</script>
+</head>
+
+<body>
+<p id="info">Arrastre cada profesor en el horario deseado. Se ha limitado a máximo dos profesores por turno, y el "profesor 3" no puede hacer el turno de noche. En todos los turnos al menos debe haber un profesor.</p>
+<aside>
+	<img id="profesor1" title="profesor1" class="box" src="profesor1.png" 	draggable="true" 
+    														ondragstart="dragstart(event)"
+                                                            ondragend="dragend(event)" />
+                                                            
+    <img id="profesor2" title="profesor2" class="box" src="profesor2.png" draggable="true" ondragstart="dragstart(event)" ondragend="dragend(event)" />
+    <img id="profesor3" title="profesor3" class="box" src="profesor3.png" draggable="true" ondragstart="dragstart(event)" ondragend="dragend(event)"/>
+</aside>
+
+<section>
+	<p>Horario de Mañana</p>
+	<div id="morning" class="contenedor" 	ondragenter="enter(event)" 
+    										ondragleave="leave(event)"
+                                            ondragover="over(event)"
+                                            ondrop="drop(event)"></div>
+	
+    <p>Horario de Tarde</p>
+    <div id="afternoon" ondragenter="enter(event)" ondragleave="leave(event)" ondragover="over(event)" ondrop="drop(event)"  class="contenedor"></div>
+    <p>Horario de Noche</p>
+    <div id="night" ondragenter="enter(event)" ondragleave="leave(event)" ondragover="over(event)" ondrop="drop(event)" class="contenedor"></div>
+</section>
+<div id="papelera" ondragenter="enter(event)" ondragleave="leave(event)" ondragover="over(event)" ondrop="eliminar(event, this)"></div>
+
+<button onClick="resultados();">Enviar</button>
+
+
+</body>
+</html>
